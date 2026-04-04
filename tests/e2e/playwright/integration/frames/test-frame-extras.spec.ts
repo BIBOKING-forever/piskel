@@ -4,7 +4,6 @@ import {
   getFrameTiles,
   getAddFrameButton,
   waitFor,
-  wait,
 } from "../../testutils";
 
 /** Get the toggle button for a frame at the given index */
@@ -14,6 +13,8 @@ function getFrameToggle(page: Page, index: number) {
 
 /** Check if a frame is visible (toggled class = visible in preview) */
 async function isFrameVisible(page: Page, index: number): Promise<boolean> {
+  // Wait for one animation frame so the render loop updates the DOM
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
   const toggle = getFrameToggle(page, index);
   const cls = await toggle.getAttribute('class') ?? '';
   return cls.includes('toggled');
@@ -30,9 +31,7 @@ test.describe('Frame visibility toggle', () => {
     await getAddFrameButton(page).click();
     await waitFor(async () => (await getFrameTiles(page).count()) === 3);
 
-    await wait(300);
-
-    // All toggle buttons should have the "toggled" class (visible)
+    // All frames should be visible in the model
     expect(await isFrameVisible(page, 0)).toBe(true);
     expect(await isFrameVisible(page, 1)).toBe(true);
     expect(await isFrameVisible(page, 2)).toBe(true);
@@ -48,7 +47,7 @@ test.describe('Frame visibility toggle', () => {
 
     // Hide frame 1
     await getFrameToggle(page, 1).click();
-    await wait(200);
+    await waitFor(async () => !(await isFrameVisible(page, 1)));
 
     expect(await isFrameVisible(page, 0)).toBe(true);
     expect(await isFrameVisible(page, 1)).toBe(false);
@@ -63,12 +62,10 @@ test.describe('Frame visibility toggle', () => {
 
     // Hide then show frame 1
     await getFrameToggle(page, 1).click();
-    await wait(200);
-    expect(await isFrameVisible(page, 1)).toBe(false);
+    await waitFor(async () => !(await isFrameVisible(page, 1)));
 
     await getFrameToggle(page, 1).click();
-    await wait(200);
-    expect(await isFrameVisible(page, 1)).toBe(true);
+    await waitFor(async () => (await isFrameVisible(page, 1)));
   });
 
   test('hidden frame should be excluded from visible frame indexes', async ({ page }) => {
@@ -81,7 +78,7 @@ test.describe('Frame visibility toggle', () => {
 
     // Hide frame 1
     await getFrameToggle(page, 1).click();
-    await wait(200);
+    await waitFor(async () => !(await isFrameVisible(page, 1)));
 
     // Check visible frame indexes via the model
     const visibleIndexes = await page.evaluate(() =>

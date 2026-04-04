@@ -11,6 +11,7 @@ import {
   setPiskelFromImageSrc,
   TRANSPARENT,
   wait,
+  waitFor,
 } from "../../testutils";
 
 // 1x1 black PNG
@@ -96,7 +97,7 @@ test.describe('File handling — image import', () => {
     await page.click('input[name="import-type"][value="sheet"]');
     await wait(200);
 
-    // Set frame size to 2x2 via evaluate (fill doesn't trigger Piskel's input events)
+    // Set frame size to 2x2 via evaluate (fill/type don't trigger Piskel's input events)
     await page.evaluate(() => {
       const sx = document.querySelector('input[name="frame-size-x"]') as HTMLInputElement;
       const sy = document.querySelector('input[name="frame-size-y"]') as HTMLInputElement;
@@ -109,20 +110,20 @@ test.describe('File handling — image import', () => {
     await wait(1000);
 
     await page.click('.current-step.import-image-container .import-next-button');
-    await page.waitForTimeout(3000);
 
-    // Select mode — Replace
-    await expect(page.locator('.current-step .import-mode')).toBeAttached();
+    // Select mode — Replace (onNextClick → createPiskelFromImage is async)
+    await expect(page.locator('.current-step .import-mode')).toBeAttached({ timeout: 30000 });
     page.once('dialog', dialog => dialog.accept());
     await page.click('.import-mode-replace-button');
 
     await page.waitForSelector('#dialog-container-wrapper:not(.show)', { state: 'attached', timeout: 10000 });
-    await wait(500);
 
-    // Should have 2 frames of 2x2
+    // Wait until import is fully processed
+    await waitFor(async () => (await getCurrentPiskelFrameCount(page)) === 2,
+      { timeout: 10000, message: 'Spritesheet import did not produce 2 frames' });
+
     expect(await getCurrentPiskelWidth(page)).toBe(2);
     expect(await getCurrentPiskelHeight(page)).toBe(2);
-    expect(await getCurrentPiskelFrameCount(page)).toBe(2);
 
     // Frame 0 should be red, frame 1 should be blue
     expect(await getPixelColor(page, 0, 0, 0, 0)).toBe(colorToInt('#FF0000'));
@@ -163,15 +164,14 @@ test.describe('File handling — image import', () => {
     await expect(page.locator('input[name="frame-offset-x"]')).toHaveValue('0');
     await expect(page.locator('input[name="frame-offset-y"]')).toHaveValue('0');
 
-    // Set frame size 2x2 with offset 1,1 via evaluate (fill/type don't trigger events)
+    // Set frame size 2x2 with offset 1,1 via evaluate (fill/type don't trigger Piskel's input events)
     await page.evaluate(() => {
       const sx = document.querySelector('input[name="frame-size-x"]') as HTMLInputElement;
       const sy = document.querySelector('input[name="frame-size-y"]') as HTMLInputElement;
       const ox = document.querySelector('input[name="frame-offset-x"]') as HTMLInputElement;
       const oy = document.querySelector('input[name="frame-offset-y"]') as HTMLInputElement;
-      
+
       sx.value = '2'; sy.value = '2';
-      // Set offset to 1
       ox.value = '1'; oy.value = '1';
       [sx, sy, ox, oy].forEach(el => {
         el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -181,21 +181,21 @@ test.describe('File handling — image import', () => {
     await wait(1000);
 
     await page.click('.current-step.import-image-container .import-next-button');
-    await page.waitForTimeout(3000);
 
     // Replace
-    await expect(page.locator('.current-step .import-mode')).toBeAttached();
+    // Select mode — Replace (onNextClick → createPiskelFromImage is async)
+    await expect(page.locator('.current-step .import-mode')).toBeAttached({ timeout: 30000 });
     page.once('dialog', dialog => dialog.accept());
     await page.click('.import-mode-replace-button');
 
     await page.waitForSelector('#dialog-container-wrapper:not(.show)', { state: 'attached', timeout: 10000 });
-    await wait(500);
 
-    // With offset (1,1) and frame size 2x2 on a 6x4 image:
-    // Frames extracted from (1,1): red block and green block
+    // Wait until import is fully processed: 2 frames with 2x2 size
+    await waitFor(async () => (await getCurrentPiskelFrameCount(page)) === 2,
+      { timeout: 10000, message: 'Spritesheet import did not produce 2 frames' });
+
     expect(await getCurrentPiskelWidth(page)).toBe(2);
     expect(await getCurrentPiskelHeight(page)).toBe(2);
-    expect(await getCurrentPiskelFrameCount(page)).toBe(2);
 
     // Frame 0 should be red, frame 1 should be green
     expect(await getPixelColor(page, 0, 0, 0, 0)).toBe(colorToInt('#FF0000'));

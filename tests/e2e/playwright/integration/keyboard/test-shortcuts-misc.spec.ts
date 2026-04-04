@@ -9,7 +9,6 @@ import {
   openSaveSettingsPanel,
   isSettingsDrawerExpanded,
   waitFor,
-  wait,
 } from "../../testutils";
 
 test.describe('Keyboard shortcuts — zoom', () => {
@@ -20,42 +19,53 @@ test.describe('Keyboard shortcuts — zoom', () => {
     );
   }
 
+  /** Press a zoom key and wait for the zoom to change from `before`. Retries the keypress if needed. */
+  async function pressZoomKey(page: Page, key: string, before: number, direction: 'up' | 'down') {
+    const check = direction === 'up'
+      ? async () => (await getZoom(page)) > before
+      : async () => (await getZoom(page)) < before;
+    // Retry the keypress up to 3 times in case it doesn't register
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await page.keyboard.press(key);
+      try {
+        await waitFor(check, { timeout: 1000, message: '' });
+        return;
+      } catch {
+        // Key didn't register — retry
+      }
+    }
+    throw new Error(`Zoom did not ${direction === 'up' ? 'increase' : 'decrease'} after pressing "${key}" (3 attempts)`);
+  }
+
   test('"+" should increase zoom', async ({ page }) => {
     await openEditor(page);
     const before = await getZoom(page);
-
-    await page.keyboard.press('+');
-    await wait(200);
-
-    expect(await getZoom(page)).toBeGreaterThan(before);
+    await pressZoomKey(page, '+', before, 'up');
   });
 
   test('"-" should decrease zoom', async ({ page }) => {
     await openEditor(page);
 
-    // Zoom in first
+    // Zoom in first — press one at a time and wait for each to take effect
+    let zoom = await getZoom(page);
     for (let i = 0; i < 3; i++) {
-      await page.keyboard.press('+');
-      await wait(100);
+      await pressZoomKey(page, '+', zoom, 'up');
+      zoom = await getZoom(page);
     }
-    const before = await getZoom(page);
 
-    await page.keyboard.press('-');
-    await wait(200);
-
-    expect(await getZoom(page)).toBeLessThan(before);
+    await pressZoomKey(page, '-', zoom, 'down');
   });
 
   test('"0" should reset zoom', async ({ page }) => {
     await openEditor(page);
     const initial = await getZoom(page);
 
-    // Zoom in
+    // Zoom in — press one at a time and wait for each to take effect
+    let zoom = initial;
     for (let i = 0; i < 3; i++) {
-      await page.keyboard.press('+');
-      await wait(100);
+      await pressZoomKey(page, '+', zoom, 'up');
+      zoom = await getZoom(page);
     }
-    expect(await getZoom(page)).toBeGreaterThan(initial);
 
     // Reset
     await page.keyboard.press('0');

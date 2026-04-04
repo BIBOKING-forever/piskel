@@ -1,8 +1,9 @@
 import test, { expect, Page } from "@playwright/test";
 import { openEditor, clickTool, setPiskelFromGrid, waitFor, getAddFrameButton, getFrameTiles, wait } from "../../testutils";
 
-/** Get screen coordinates for a sprite pixel */
+/** Get screen coordinates for a sprite pixel (waits for pending relayout first) */
 async function getScreenCoords(page: Page, col: number, row: number) {
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 210)));
   return page.evaluate(({ col, row }) =>
     window.pskl.app.drawingController.getScreenCoordinates(col, row), { col, row });
 }
