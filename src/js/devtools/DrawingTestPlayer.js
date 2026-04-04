@@ -85,16 +85,37 @@
     this.shim = null;
   };
 
-  ns.DrawingTestPlayer.prototype.playEvent_ = function (index) {
-    this.timer = window.setTimeout(function () {
-      var recordEvent = this.events[index];
+  /**
+   * Determine the delay before playing the next event.
+   * Keyboard events with Ctrl (undo/redo) and transform tool events trigger
+   * async operations (history deserialization, resize) that need extra time.
+   */
+  ns.DrawingTestPlayer.prototype.getStepDelay_ = function (recordEvent) {
+    if (!recordEvent) {
+      return this.step;
+    }
+    // Undo/redo (Ctrl+Z, Ctrl+Y) trigger async history deserialization
+    if (recordEvent.type === 'keyboard-event' && recordEvent.event.ctrlKey) {
+      return 1000;
+    }
+    // Transform tools (crop, rotate, etc.) may resize the piskel asynchronously
+    if (recordEvent.type === 'transformtool-event') {
+      return 1000;
+    }
+    return this.step;
+  };
 
+  ns.DrawingTestPlayer.prototype.playEvent_ = function (index) {
+    var recordEvent = this.events[index];
+    var delay = this.getStepDelay_(recordEvent);
+
+    this.timer = window.setTimeout(function () {
       // All events have already been replayed, finish the test.
       if (!recordEvent) {
-        // Give some time for the last step to be processed and reduce flakyness.
-        window.setTimeout(() => {
+        // Wait for async operations to settle before comparing results.
+        this.waitForStableState_(function () {
           this.onTestEnd_();
-        }, 500);
+        }.bind(this));
         return;
       }
 
@@ -121,7 +142,7 @@
       this.performance += window.performance.now() - before;
 
       this.playEvent_(index + 1);
-    }.bind(this), this.step);
+    }.bind(this), delay);
   };
 
   ns.DrawingTestPlayer.prototype.playMouseEvent_ = function (recordEvent) {
@@ -184,6 +205,30 @@
         setData: function () { }
       }
     });
+  };
+
+  /**
+   * Poll until the piskel rendered output is stable (identical hash on two
+   * consecutive checks). This ensures async operations like history
+   * deserialization and relayout have completed before comparing results.
+   */
+  ns.DrawingTestPlayer.prototype.waitForStableState_ = function (callback, prevHash, attempts) {
+    attempts = attempts || 0;
+    var renderer = new pskl.rendering.PiskelRenderer(pskl.app.piskelController);
+    var canvas = renderer.renderAsCanvas();
+    var data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    var hash = data.length + ':' + data[0] + ':' + data[data.length - 1];
+    for (var i = 0; i < data.length; i += 37) {
+      hash += ':' + data[i];
+    }
+
+    if (hash === prevHash || attempts > 20) {
+      callback();
+    } else {
+      window.setTimeout(function () {
+        this.waitForStableState_(callback, hash, attempts + 1);
+      }.bind(this), 200);
+    }
   };
 
   ns.DrawingTestPlayer.prototype.onTestEnd_ = function () {
