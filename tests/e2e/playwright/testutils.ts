@@ -1,4 +1,12 @@
 import { Page, expect } from '@playwright/test';
+import os from 'os';
+
+/** The modifier key for keyboard shortcuts: Meta on macOS, Control elsewhere. */
+export const CMD_OR_CTRL = os.platform() === 'darwin' ? 'Meta' : 'Control';
+
+/** The modifier label as displayed in the Piskel UI (e.g. cheatsheet): "cmd" on macOS, "ctrl" elsewhere. */
+export const MODIFIER_LABEL = os.platform() === 'darwin' ? 'cmd' : 'ctrl';
+
 import { EDITOR_PATH } from "./constants";
 
 // Type declaration for the Piskel global available in the browser context.
@@ -528,10 +536,10 @@ export const getCurrentFrameIndex = async (page: Page): Promise<number> => {
 
 /** Trigger undo via keyboard */
 export const undo = async (page: Page): Promise<void> => {
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press(`${CMD_OR_CTRL}+z`);
 };
 
 /** Trigger redo via keyboard */
 export const redo = async (page: Page): Promise<void> => {
-  await page.keyboard.press('Control+y');
+  await page.keyboard.press(`${CMD_OR_CTRL}+y`);
 };

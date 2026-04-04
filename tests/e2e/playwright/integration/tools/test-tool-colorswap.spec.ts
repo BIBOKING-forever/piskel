@@ -1,5 +1,6 @@
 import test, { expect } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   clickTool,
   colorToInt,
   drawAtPixel,
@@ -110,9 +111,9 @@ test.describe('ColorSwap tool modifiers', () => {
     await setPrimaryColor(page, '#00FF00');
     await clickTool(page, 'tool-colorswap');
 
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD_OR_CTRL);
     await drawAtPixel(page, 1, 1);
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD_OR_CTRL);
     await wait(200);
 
     expect(await getPixelColor(page, 1, 1, 1, 0)).toBe(colorToInt('#00FF00'));

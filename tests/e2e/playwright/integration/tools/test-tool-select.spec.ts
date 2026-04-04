@@ -1,5 +1,6 @@
 import test, { expect, Page } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   clickTool,
   drawAtPixel,
   getPixelColor,
@@ -168,7 +169,7 @@ test.describe('Selection tools', () => {
     await dragBetweenPixels(page, 0, 0, 2, 2);
 
     // Copy — original should be preserved (unlike cut)
-    await page.keyboard.press('Control+c');
+    await page.keyboard.press(`${CMD_OR_CTRL}+c`);
 
     // Erase the original to prove paste restores from clipboard
     await page.keyboard.press('Delete');
@@ -178,7 +179,7 @@ test.describe('Selection tools', () => {
     expect(grid.flat().filter(c => c === 'X').length).toBe(0);
 
     // Paste — should place the 3x3 block back at the selection origin
-    await page.keyboard.press('Control+v');
+    await page.keyboard.press(`${CMD_OR_CTRL}+v`);
     await page.keyboard.press('Enter');
 
     grid = await readPixelGrid(page, 10, 10);
@@ -221,7 +222,7 @@ test.describe('Selection tools', () => {
     await dragBetweenPixels(page, 0, 0, 2, 2);
 
     // Cut (Ctrl+X) — should erase the original
-    await page.keyboard.press('Control+x');
+    await page.keyboard.press(`${CMD_OR_CTRL}+x`);
 
     // Original position should now be empty
     expect(await getPixelColor(page, 0, 0)).toBe(TRANSPARENT);
@@ -229,7 +230,7 @@ test.describe('Selection tools', () => {
     expect(await getPixelColor(page, 2, 2)).toBe(TRANSPARENT);
 
     // Paste (Ctrl+V) — should place the cut content
-    await page.keyboard.press('Control+v');
+    await page.keyboard.press(`${CMD_OR_CTRL}+v`);
     await page.keyboard.press('Enter');
 
     // Should have 9 filled pixels somewhere (the pasted block)

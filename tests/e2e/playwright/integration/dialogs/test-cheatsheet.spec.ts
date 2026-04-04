@@ -1,5 +1,5 @@
 import test, { expect } from "@playwright/test";
-import { openEditor } from "../../testutils";
+import { MODIFIER_LABEL, openEditor } from "../../testutils";
 
 /** Open the cheatsheet dialog and wait for it to be visible */
 async function openCheatsheet(page: import('@playwright/test').Page) {
@@ -63,11 +63,11 @@ test.describe('Cheatsheet dialog', () => {
     await openCheatsheet(page);
 
     const undoShortcut = page.locator('[data-shortcut-id="undo"] .cheatsheet-key');
-    await expect(undoShortcut).toContainText('ctrl');
+    await expect(undoShortcut).toContainText(MODIFIER_LABEL);
     await expect(undoShortcut).toContainText('Z');
 
     const redoShortcut = page.locator('[data-shortcut-id="redo"] .cheatsheet-key');
-    await expect(redoShortcut).toContainText('ctrl');
+    await expect(redoShortcut).toContainText(MODIFIER_LABEL);
     await expect(redoShortcut).toContainText('Y');
   });
 

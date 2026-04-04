@@ -1,5 +1,6 @@
 import test, { expect, Page } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   clickTool,
   colorToInt,
   drawAtPixel,
@@ -240,12 +241,12 @@ test.describe('Move tool', () => {
     const end = await page.evaluate(({ col, row }) =>
       window.pskl.app.drawingController.getScreenCoordinates(col, row), { col: 6, row: 3 });
 
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD_OR_CTRL);
     await page.mouse.move(start.x, start.y);
     await page.mouse.down();
     await page.mouse.move(end.x, end.y, { steps: 5 });
     await page.mouse.up();
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD_OR_CTRL);
 
     // Layer 0: dot moved from (2,2) to (6,2)
     const grid0 = await readPixelGrid(page, 10, 10, 0, 0);

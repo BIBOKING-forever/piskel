@@ -1,5 +1,6 @@
 import test, { expect, Page } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   openEditor,
   setPiskelFromGrid,
   setPrimaryColor,
@@ -129,7 +130,7 @@ test.describe('Keyboard shortcuts — save', () => {
     await waitFor(async () => (await page.locator('.piskel-name').innerText()).includes('*'));
 
     // Ctrl+S should save
-    await page.keyboard.press('Control+s');
+    await page.keyboard.press(`${CMD_OR_CTRL}+s`);
     await waitFor(async () => !(await page.locator('.piskel-name').innerText()).includes('*'));
 
     expect(await page.locator('.piskel-name').innerText()).not.toContain('*');

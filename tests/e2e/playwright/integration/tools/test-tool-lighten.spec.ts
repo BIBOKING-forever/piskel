@@ -1,5 +1,6 @@
 import test, { expect } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   clickTool,
   drawAtPixel,
   getPixelColor,
@@ -89,9 +90,9 @@ test.describe('Lighten tool modifiers', () => {
     const before = await getPixelColor(page, 1, 1);
 
     await clickTool(page, 'tool-lighten');
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD_OR_CTRL);
     await drawAtPixel(page, 1, 1);
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD_OR_CTRL);
     await wait(200);
 
     const after = await getPixelColor(page, 1, 1);

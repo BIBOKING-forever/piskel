@@ -1,5 +1,6 @@
 import test, { expect } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   clickTool,
   drawAtPixel,
   openEditor,
@@ -49,9 +50,9 @@ test.describe('Vertical mirror pen tool', () => {
     const coords = await page.evaluate(({ col, row }) =>
       window.pskl.app.drawingController.getScreenCoordinates(col, row), { col: 2, row: 2 });
 
-    await page.keyboard.down('Control');
+    await page.keyboard.down(CMD_OR_CTRL);
     await page.mouse.click(coords.x, coords.y);
-    await page.keyboard.up('Control');
+    await page.keyboard.up(CMD_OR_CTRL);
 
     const grid = await readPixelGrid(page, 10, 10);
 

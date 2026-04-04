@@ -1,5 +1,6 @@
 import test, { expect, Page } from "@playwright/test";
 import {
+  CMD_OR_CTRL,
   openEditor,
   setPiskelFromGrid,
   readPixelGrid,
@@ -65,11 +66,11 @@ async function clickTransform(
 
   if (modifiers.alt) await page.keyboard.down('Alt');
   if (modifiers.shift) await page.keyboard.down('Shift');
-  if (modifiers.ctrl) await page.keyboard.down('Control');
+  if (modifiers.ctrl) await page.keyboard.down(CMD_OR_CTRL);
 
   await tool.click();
 
-  if (modifiers.ctrl) await page.keyboard.up('Control');
+  if (modifiers.ctrl) await page.keyboard.up(CMD_OR_CTRL);
   if (modifiers.shift) await page.keyboard.up('Shift');
   if (modifiers.alt) await page.keyboard.up('Alt');
 
