@@ -20,7 +20,7 @@
     },
 
     createKeyFromEvent : function (evt) {
-      var keycode = evt.which;
+      var keycode = evt.which || evt.keyCode;
       var key = ns.KeycodeTranslator.toChar(keycode);
       if (!key) {
         return null;
