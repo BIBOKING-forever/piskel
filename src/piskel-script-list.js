@@ -2,7 +2,7 @@
 // At build time, the concat-scripts vite plugin reads this list to produce
 // the concatenated js/piskel-packaged-{version}.js bundle.
 
-(typeof exports != "undefined" ? exports : pskl_exports).scripts = [
+exports.scripts = [
   // Core libraries
   "js/lib/jquery-1.8.0.js",
   "js/lib/jquery-ui-1.10.3.custom.js",

@@ -205,10 +205,6 @@
         });
       }
 
-      if (pskl.utils.Environment.isDebug()) {
-        pskl.app.shortcutService.registerShortcut(pskl.service.keyboard.Shortcuts.DEBUG.RELOAD_STYLES,
-          window.reloadStyles);
-      }
     },
 
     // TODO: Remove this method and connected code.
