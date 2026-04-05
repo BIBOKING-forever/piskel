@@ -157,7 +157,7 @@ if (!isTest) {
         console.log(`\nFile changed: ${filename}`);
         console.log('Rebuilding...');
         isRebuilding = true;
-        exec('npm run vite:build', { cwd: path.resolve(__dirname, '..') }, (err) => {
+        exec('npm run build', { cwd: path.resolve(__dirname, '..') }, (err) => {
           isRebuilding = false;
           if (err) { console.error('Build failed'); return; }
           if (isCssOnly) {
