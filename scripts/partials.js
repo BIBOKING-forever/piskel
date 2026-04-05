@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * Jekyll partial generation script.
+ * Website partial generation script.
  *
- * Reads dest/prod/index.html and generates 3 Jekyll-compatible HTML variants
+ * Reads dest/prod/index.html and generates 3 Website-compatible HTML variants
  * for piskelapp.com integration.
  */
 
@@ -30,7 +30,7 @@ function extractAndProcess(html, headerReplacement, footerReplacement) {
 }
 
 function main() {
-  console.log('Generating Jekyll partials...');
+  console.log('Generating Website partials...');
 
   if (!fs.existsSync(INDEX_PATH)) {
     console.error(`Error: ${INDEX_PATH} not found. Run the build first.`);
@@ -47,7 +47,7 @@ function main() {
   fs.writeFileSync(path.join(OUTPUT_DIR, 'main-partial.html'), mainPartial);
   console.log('  Created main-partial.html');
 
-  // 2. piskel-web-partial.html (piskelapp.com Jekyll site)
+  // 2. piskel-web-partial.html (piskelapp.com Website site)
   const webPartial = extractAndProcess(
     html,
     '---\nlayout: "editorLayout.html"\n---\n\n',
