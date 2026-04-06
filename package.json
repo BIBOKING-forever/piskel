@@ -29,7 +29,6 @@
     "lint": "eslint src/js --ignore-pattern '**/lib/**'",
     "lint:fix": "eslint src/js --ignore-pattern '**/lib/**' --fix",
     "format": "npm run lint:fix",
-    
     "build:desktop": "npm run lint && npm run build && node scripts/desktop.js",
     "build:mac": "npm run lint && npm run build && node scripts/desktop.js --platform=macos",
     "start:nw": "npm run build && nw",
@@ -40,7 +39,6 @@
     "unit-tests:watch": "karma start --auto-watch --no-single-run",
     "test": "npm run unit-tests; npm run e2e",
     "test-ci": "bash ./run-test-ci.sh",
-    
     "release": "npm run build && node ./bin/copy-to-piskel-website",
     "release-piskel-web": "npm run build && node ./bin/copy-to-piskel-web",
 
@@ -48,6 +46,7 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
     "@playwright/test": "^1.52.0",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.5.16",

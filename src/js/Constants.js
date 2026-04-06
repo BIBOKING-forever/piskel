@@ -1,4 +1,5 @@
 // TODO(grosbouddha): put under pskl namespace.
+// biome-ignore lint/correctness/noUnusedVariables: global
 var Constants = {
   DEFAULT : {
     HEIGHT : 32,
