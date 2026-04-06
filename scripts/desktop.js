@@ -16,6 +16,7 @@ const { execSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const DESKTOP_DIR = path.resolve(ROOT, 'dest/desktop');
 const CACHE_DIR = path.resolve(ROOT, 'cache');
+const releaseVersion = require(path.resolve(ROOT, 'package.json')).version;
 
 // Parse --platform argument
 const args = process.argv.slice(2);
@@ -44,6 +45,19 @@ const configs = {
     flavor: 'normal',
     targets: [{ platform: 'osx', arch: 'x64' }],
     outDir: DESKTOP_DIR,
+    app: {
+      name: 'Piskel',
+      icon: './misc/desktop/nw.icns',
+      LSApplicationCategoryType: 'public.app-category.graphics-design',
+      CFBundleIdentifier: 'com.piskelapp.piskel',
+      CFBundleName: 'Piskel',
+      CFBundleDisplayName: 'Piskel',
+      CFBundleSpokenName: 'Piskel',
+      CFBundleVersion: releaseVersion,
+      CFBundleShortVersionString: releaseVersion,
+      NSHumanReadableCopyright: 'Copyright 2025 Piskel contributors',
+      NSLocalNetworkUsageDescription: 'Piskel does not access the local network',
+    },
   },
 };
 
@@ -121,7 +135,7 @@ async function main() {
   for (var target of config.targets) {
     var targetOutDir = path.resolve(config.outDir, target.platform + '-' + target.arch);
     console.log('\n  Building ' + target.platform + '-' + target.arch + '...');
-    await nwbuild({
+    var nwOptions = {
       mode: 'build',
       version: config.version,
       flavor: config.flavor,
@@ -135,7 +149,11 @@ async function main() {
       glob: true,
       shaSum: false,
       logLevel: 'info',
-    });
+    };
+    if (config.app) {
+      nwOptions.app = config.app;
+    }
+    await nwbuild(nwOptions);
   }
 
   console.log('\nDesktop build complete.');
