@@ -1,5 +1,5 @@
 (function () {
-  var ns = $.namespace('pskl.selection');
+  var ns = $.namespace("pskl.selection");
 
   ns.BaseSelection = function () {
     this.reset();
@@ -40,7 +40,7 @@
   ns.BaseSelection.prototype.fillSelectionFromFrame = function (targetFrame) {
     this.pixels.forEach(function (pixel) {
       var color = targetFrame.getPixel(pixel.col, pixel.row);
-      pixel.color  = color || Constants.TRANSPARENT_COLOR;
+      pixel.color = color || Constants.TRANSPARENT_COLOR;
     });
 
     this.hasPastedContent = true;

@@ -50,7 +50,7 @@ exports.scripts = [
   "js/utils/serialization/backward/Deserializer_v0.js",
   "js/utils/serialization/backward/Deserializer_v1.js",
 
-    // GIF Encoding libraries
+  // GIF Encoding libraries
   "js/lib/gif/gif.worker.js",
   "js/lib/gif/gif.js",
   "js/lib/gif/libgif.js",

@@ -1,13 +1,14 @@
 (function () {
-  var ns = $.namespace('pskl.tools.transform');
+  var ns = $.namespace("pskl.tools.transform");
 
   ns.Crop = function () {
-    this.toolId = 'tool-crop';
-    this.helpText = 'Crop the sprite';
+    this.toolId = "tool-crop";
+    this.helpText = "Crop the sprite";
     this.tooltipDescriptors = [
       {
-        description : 'Crop to fit the content or the selection. ' +
-                      'Applies to all frames and layers!'
+        description:
+          "Crop to fit the content or the selection. " +
+          "Applies to all frames and layers!"
       }
     ];
   };
@@ -31,7 +32,7 @@
     var applied = this.applyTool_(frames, boundaries);
     if (applied) {
       this.raiseSaveStateEvent({
-        boundaries : boundaries
+        boundaries: boundaries
       });
     }
   };
@@ -50,19 +51,26 @@
     var width = 1 + boundaries.maxx - boundaries.minx;
     var height = 1 + boundaries.maxy - boundaries.miny;
 
-    if (width === currentPiskel.getWidth() && height === currentPiskel.getHeight()) {
+    if (
+      width === currentPiskel.getWidth() &&
+      height === currentPiskel.getHeight()
+    ) {
       // Do not perform an unnecessary resize if it's a noop.
       return false;
     }
 
     frames.forEach(function (frame) {
-      pskl.tools.transform.TransformUtils.moveFramePixels(frame, -boundaries.minx, -boundaries.miny);
+      pskl.tools.transform.TransformUtils.moveFramePixels(
+        frame,
+        -boundaries.minx,
+        -boundaries.miny
+      );
     });
 
     var piskel = pskl.utils.ResizeUtils.resizePiskel(currentPiskel, {
-      width :  1 + boundaries.maxx - boundaries.minx,
-      height :  1 + boundaries.maxy - boundaries.miny,
-      origin: 'TOP-LEFT',
+      width: 1 + boundaries.maxx - boundaries.minx,
+      height: 1 + boundaries.maxy - boundaries.miny,
+      origin: "TOP-LEFT",
       resizeContent: false
     });
 
@@ -87,11 +95,14 @@
     var currentPiskel = pskl.app.piskelController.getPiskel();
 
     // Get all frames in a single array.
-    var frames = currentPiskel.getLayers().map(function (l) {
-      return l.getFrames();
-    }).reduce(function (p, n) {
-      return p.concat(n);
-    });
+    var frames = currentPiskel
+      .getLayers()
+      .map(function (l) {
+        return l.getFrames();
+      })
+      .reduce(function (p, n) {
+        return p.concat(n);
+      });
 
     return frames;
   };
@@ -111,8 +122,8 @@
     var FAKE_COLOR = 1;
     // Create a fake frame reimplementing the forEachPixel API.
     var selectionFrame = {
-      forEachPixel : function (callback) {
-        for (var i = 0; i < pixels.length ; i++) {
+      forEachPixel: function (callback) {
+        for (var i = 0; i < pixels.length; i++) {
           var pixel = pixels[i];
           // Selections might contain out of bound pixels, filter those out.
           if (exampleFrame.containsPixel(pixel.col, pixel.row)) {
