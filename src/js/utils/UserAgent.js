@@ -2,6 +2,17 @@
   var ns = $.namespace("pskl.utils");
   var ua = navigator.userAgent;
 
+  ns.UserAgent = {
+    isIE: /MSIE/i.test(ua),
+    isIE11: /trident/i.test(ua),
+    isEdge: /edge\//i.test(ua),
+    isFirefox: /Firefox/i.test(ua),
+    isMac: /Mac/.test(ua),
+    isOpera: /OPR\//.test(ua),
+    hasChrome: /Chrome/i.test(ua),
+    hasSafari: /Safari\//.test(ua),
+  };
+
   ns.UserAgent.isChrome =
     ns.UserAgent.hasChrome && !ns.UserAgent.isOpera && !ns.UserAgent.isEdge;
   ns.UserAgent.isSafari =
