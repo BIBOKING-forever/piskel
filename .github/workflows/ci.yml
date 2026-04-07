@@ -45,7 +45,7 @@ jobs:
               && fromJson(format('["{0}"]', github.event.inputs.os))
             || fromJson('["ubuntu-latest"]')
           }}
-    timeout-minutes: 60
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
