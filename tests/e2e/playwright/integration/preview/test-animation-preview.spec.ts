@@ -1,5 +1,5 @@
 import test, { expect, Page, Locator } from "@playwright/test";
-import { openEditor, openSaveSettingsPanel, setPiskelFromGrid, testId, wait, waitFor } from "../../testutils";
+import { getGridFromBase64Png, openEditor, openSaveSettingsPanel, setPiskelFromGrid, testId, wait, waitFor } from "../../testutils";
 
 // ─── Shared helpers ──────────────────────────────────────────────
 
@@ -234,16 +234,28 @@ test.describe('Preview actions', () => {
     await waitFor(async () => (await getSelectedPreviewSize(page)) === 'original');
     await wait(500);
 
-    // Wait for the preview to render
+    // Wait for the preview to render a base64 PNG
     const bgContainer = page.locator('#animated-preview-container .background-image-frame-container');
-    const expectedBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAAB5JREFUGFdj/M/A8J+RgYGRAQoYsQqAJGGq4EphWgAj3QYFh2hu/QAAAABJRU5ErkJggg==';
     await waitFor(async () => {
       const bg = await bgContainer.evaluate(el => getComputedStyle(el).backgroundImage);
       return bg.includes('data:image/png;base64,');
     });
 
+    // Extract the base64 data URI from the background-image
     const bgImage = await bgContainer.evaluate(el => getComputedStyle(el).backgroundImage);
-    expect(bgImage).toBe(`url("${expectedBase64}")`);
+    const match = bgImage.match(/url\("(data:image\/png;base64,[^"]+)"\)/);
+    expect(match).not.toBeNull();
+
+    // Decode the PNG and verify all pixels match the grid
+    const pngGrid = getGridFromBase64Png(match![1]);
+    expect(pngGrid.width).toBe(4);
+    expect(pngGrid.height).toBe(4);
+    expect(pngGrid.grid).toEqual([
+      ['R', 'T', 'T', 'T'],
+      ['R', 'T', 'T', 'T'],
+      ['R', 'R', 'T', 'T'],
+      ['T', 'T', 'T', 'T'],
+    ]);
   });
 });
 

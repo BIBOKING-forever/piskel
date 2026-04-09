@@ -1,5 +1,6 @@
 import { Page, expect } from '@playwright/test';
 import os from 'os';
+import PNG from 'png-ts';
 
 /** The modifier key for keyboard shortcuts: Meta on macOS, Control elsewhere. */
 export const CMD_OR_CTRL = os.platform() === 'darwin' ? 'Meta' : 'Control';
@@ -52,8 +53,8 @@ export const setPiskelFromImageSrc = async(page: Page, base64Image: string): Pro
   }, base64Image);
 };
 
-type TestColor = "R" | "G" | "B" | "T";
-type TestGrid = Array<Array< TestColor>>;
+export type TestColor = "R" | "G" | "B" | "T";
+export type TestGrid = Array<Array< TestColor>>;
 
 export const setPiskelFromGrid = async(page: Page, grid: TestGrid): Promise<void> => {
   return page.evaluate((grid) => {
@@ -542,4 +543,30 @@ export const undo = async (page: Page): Promise<void> => {
 /** Trigger redo via keyboard */
 export const redo = async (page: Page): Promise<void> => {
   await page.keyboard.press(`${CMD_OR_CTRL}+y`);
+};
+
+/** Decode a base64 PNG data URI into a TestGrid (server-side via png-ts) */
+export const getGridFromBase64Png = (base64DataUri: string): {width: number, height: number, grid: TestGrid} => {
+  // Strip the data URI prefix to get raw base64
+  const raw = base64DataUri.replace(/^data:image\/png;base64,/, '');
+  const buffer = Buffer.from(raw, 'base64');
+  const png = new PNG(buffer);
+  // decode() returns RGBA regardless of color type (handles palette expansion)
+  const pixels = png.decode();
+
+  const grid: TestGrid = [];
+  for (let y = 0; y < png.height; y++) {
+    const row: TestColor[] = [];
+    for (let x = 0; x < png.width; x++) {
+      const i = (y * png.width + x) * 4;
+      const [r, g, b, a] = [pixels[i], pixels[i+1], pixels[i+2], pixels[i+3]];
+      if (a === 0) row.push('T');
+      else if (r === 255 && g === 0 && b === 0) row.push('R');
+      else if (r === 0 && g === 255 && b === 0) row.push('G');
+      else if (r === 0 && g === 0 && b === 255) row.push('B');
+      else throw new Error(`Unexpected pixel color at (${x},${y}): rgba(${r},${g},${b},${a})`);
+    }
+    grid.push(row);
+  }
+  return { width: png.width, height: png.height, grid };
 };
