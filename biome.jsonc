@@ -76,7 +76,11 @@
   "overrides": [
     {
       // Vendor/third-party files — legacy CSS syntax causes parse errors
-      "includes": ["src/js/lib/**", "src/css/bootstrap/**", "src/css/spectrum/**"],
+      "includes": [
+        "src/js/lib/**",
+        "src/css/bootstrap/**",
+        "src/css/spectrum/**"
+      ],
       "linter": {
         "enabled": false
       },
