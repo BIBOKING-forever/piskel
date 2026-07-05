@@ -262,6 +262,7 @@ exports.scripts = [
 
   // Application controller and initialization
   "js/app.js",
+  "js/agent/PiskelAgent.js",
 
   // Bonus features !!
   "js/snippets.js"
