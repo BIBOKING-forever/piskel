@@ -131,6 +131,187 @@
     return pskl.utils.Math.minmax(bestFit, 1, frameCount);
   }
 
+  function getTileGeometry(image, options) {
+    var tileWidth = options.tileWidth || options.frameWidth;
+    var tileHeight = options.tileHeight || options.frameHeight;
+    if (!tileWidth || !tileHeight) {
+      throw new Error("tileWidth and tileHeight are required.");
+    }
+
+    var offsetX = options.offsetX || 0;
+    var offsetY = options.offsetY || 0;
+    var spacingX = options.spacingX || options.spacing || 0;
+    var spacingY = options.spacingY || options.spacing || 0;
+    var columns =
+      options.columns ||
+      Math.floor((image.width - offsetX + spacingX) / (tileWidth + spacingX));
+    var rows =
+      options.rows ||
+      Math.floor((image.height - offsetY + spacingY) / (tileHeight + spacingY));
+
+    if (!columns || !rows) {
+      throw new Error("Unable to calculate tileset rows/columns.");
+    }
+
+    return {
+      tileWidth: tileWidth,
+      tileHeight: tileHeight,
+      offsetX: offsetX,
+      offsetY: offsetY,
+      spacingX: spacingX,
+      spacingY: spacingY,
+      columns: columns,
+      rows: rows,
+      tileCount: columns * rows
+    };
+  }
+
+  function getTileSourceRect(index, geometry) {
+    if (index < 0 || index >= geometry.tileCount) {
+      throw new Error("Tile index " + index + " is outside the tileset.");
+    }
+
+    var column = index % geometry.columns;
+    var row = Math.floor(index / geometry.columns);
+    return {
+      x: geometry.offsetX + column * (geometry.tileWidth + geometry.spacingX),
+      y: geometry.offsetY + row * (geometry.tileHeight + geometry.spacingY),
+      width: geometry.tileWidth,
+      height: geometry.tileHeight,
+      column: column,
+      row: row
+    };
+  }
+
+  function normalizeTileCell(cell) {
+    if (cell === null || typeof cell === "undefined" || cell === -1) {
+      return null;
+    }
+
+    if (typeof cell === "number") {
+      return { index: cell };
+    }
+
+    if (Array.isArray(cell)) {
+      return cell.map(normalizeTileCell).filter(Boolean);
+    }
+
+    return {
+      index:
+        typeof cell.index === "number"
+          ? cell.index
+          : typeof cell.tile === "number"
+            ? cell.tile
+            : cell.id,
+      offsetX: cell.offsetX || cell.dx || 0,
+      offsetY: cell.offsetY || cell.dy || 0,
+      flipX: !!cell.flipX,
+      flipY: !!cell.flipY,
+      opacity:
+        typeof cell.opacity === "number"
+          ? pskl.utils.Math.minmax(cell.opacity, 0, 1)
+          : 1
+    };
+  }
+
+  function drawTile(image, context, geometry, tile, x, y, scale) {
+    if (Array.isArray(tile)) {
+      tile.forEach(function (entry) {
+        drawTile(image, context, geometry, entry, x, y, scale);
+      });
+      return;
+    }
+
+    if (!tile || typeof tile.index !== "number") {
+      return;
+    }
+
+    var source = getTileSourceRect(tile.index, geometry);
+    var dx = x * geometry.tileWidth * scale + tile.offsetX * scale;
+    var dy = y * geometry.tileHeight * scale + tile.offsetY * scale;
+    var dw = geometry.tileWidth * scale;
+    var dh = geometry.tileHeight * scale;
+
+    context.save();
+    context.globalAlpha = context.globalAlpha * tile.opacity;
+    if (tile.flipX || tile.flipY) {
+      context.translate(dx + (tile.flipX ? dw : 0), dy + (tile.flipY ? dh : 0));
+      context.scale(tile.flipX ? -1 : 1, tile.flipY ? -1 : 1);
+      dx = 0;
+      dy = 0;
+    }
+    context.drawImage(
+      image,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
+      dx,
+      dy,
+      dw,
+      dh
+    );
+    context.restore();
+  }
+
+  function getMapSize(map) {
+    if (!map || !map.length) {
+      throw new Error("A non-empty map is required.");
+    }
+    return {
+      columns: map.reduce(function (max, row) {
+        return Math.max(max, row ? row.length : 0);
+      }, 0),
+      rows: map.length
+    };
+  }
+
+  function normalizeRoomLayers(options) {
+    if (options.layers && options.layers.length) {
+      return options.layers.map(function (layer, index) {
+        return {
+          name: layer.name || "Layer " + (index + 1),
+          opacity:
+            typeof layer.opacity === "number"
+              ? pskl.utils.Math.minmax(layer.opacity, 0, 1)
+              : 1,
+          map: layer.map || []
+        };
+      });
+    }
+
+    return [
+      {
+        name: "Room",
+        opacity: 1,
+        map: options.map || []
+      }
+    ];
+  }
+
+  function importCanvasAsFrame(canvas, options) {
+    var frame = pskl.utils.FrameUtils.createFromCanvas(
+      canvas,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+      true
+    );
+    var piskel = buildPiskel(
+      {
+        width: canvas.width,
+        height: canvas.height,
+        fps: options.fps,
+        name: options.name || "Interior Room",
+        description: options.description,
+        layerName: options.layerName || "Room"
+      },
+      [frame]
+    );
+    getController().setPiskel(piskel);
+  }
+
   function getState() {
     var controller = getController();
     var piskel = controller.getPiskel();
@@ -389,6 +570,130 @@
     });
   }
 
+  function cutTileset(dataUrl, options) {
+    options = options || {};
+    return createImageFromDataUrl(dataUrl).then(function (image) {
+      var geometry = getTileGeometry(image, options);
+      var tiles = [];
+
+      for (var index = 0; index < geometry.tileCount; index++) {
+        var source = getTileSourceRect(index, geometry);
+        var canvas = pskl.utils.CanvasUtils.createCanvas(
+          geometry.tileWidth,
+          geometry.tileHeight
+        );
+        canvas
+          .getContext("2d")
+          .drawImage(
+            image,
+            source.x,
+            source.y,
+            source.width,
+            source.height,
+            0,
+            0,
+            geometry.tileWidth,
+            geometry.tileHeight
+          );
+
+        tiles.push({
+          index: index,
+          column: source.column,
+          row: source.row,
+          x: source.x,
+          y: source.y,
+          width: geometry.tileWidth,
+          height: geometry.tileHeight,
+          dataUrl: canvas.toDataURL("image/png")
+        });
+      }
+
+      return {
+        tileWidth: geometry.tileWidth,
+        tileHeight: geometry.tileHeight,
+        columns: geometry.columns,
+        rows: geometry.rows,
+        tileCount: geometry.tileCount,
+        tiles: tiles
+      };
+    });
+  }
+
+  function composeRoom(dataUrl, options) {
+    options = options || {};
+    return createImageFromDataUrl(dataUrl).then(function (image) {
+      var geometry = getTileGeometry(image, options);
+      var layers = normalizeRoomLayers(options);
+      var size = layers.reduce(
+        function (currentSize, layer) {
+          var layerSize = getMapSize(layer.map);
+          return {
+            columns: Math.max(currentSize.columns, layerSize.columns),
+            rows: Math.max(currentSize.rows, layerSize.rows)
+          };
+        },
+        { columns: 0, rows: 0 }
+      );
+
+      var roomColumns =
+        options.roomColumns || options.columnsInRoom || size.columns;
+      var roomRows = options.roomRows || options.rowsInRoom || size.rows;
+      var scale = options.scale || 1;
+      var canvas = pskl.utils.CanvasUtils.createCanvas(
+        roomColumns * geometry.tileWidth * scale,
+        roomRows * geometry.tileHeight * scale
+      );
+      pskl.utils.CanvasUtils.disableImageSmoothing(canvas);
+      var context = canvas.getContext("2d");
+
+      if (options.backgroundColor) {
+        context.fillStyle = options.backgroundColor;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      layers.forEach(function (layer) {
+        context.save();
+        context.globalAlpha = layer.opacity;
+        layer.map.forEach(function (row, y) {
+          if (!row) {
+            return;
+          }
+          row.forEach(function (cell, x) {
+            drawTile(
+              image,
+              context,
+              geometry,
+              normalizeTileCell(cell),
+              x,
+              y,
+              scale
+            );
+          });
+        });
+        context.restore();
+      });
+
+      if (options.importAsFrame) {
+        importCanvasAsFrame(canvas, options);
+      }
+
+      return {
+        dataUrl: canvas.toDataURL("image/png"),
+        width: canvas.width,
+        height: canvas.height,
+        roomColumns: roomColumns,
+        roomRows: roomRows,
+        tileWidth: geometry.tileWidth,
+        tileHeight: geometry.tileHeight,
+        scale: scale,
+        layers: layers.map(function (layer) {
+          return layer.name;
+        }),
+        imported: !!options.importAsFrame
+      };
+    });
+  }
+
   var commands = {
     addFrame: function (args) {
       return addFrame(args && args.index);
@@ -397,6 +702,9 @@
     createSprite: createSprite,
     cutSpritesheet: function (args) {
       return cutSpritesheet(args.dataUrl, args);
+    },
+    cutTileset: function (args) {
+      return cutTileset(args.dataUrl, args);
     },
     drawPixels: function (args) {
       return drawPixels(args.pixels || [], args);
@@ -407,6 +715,12 @@
     exportFrameDataUrl: exportFrameDataUrl,
     exportFramesheetDataUrl: exportFramesheetDataUrl,
     getState: getState,
+    composeRoom: function (args) {
+      return composeRoom(args.dataUrl || args.tilesetDataUrl, args);
+    },
+    composeRoomFromTileset: function (args) {
+      return composeRoom(args.dataUrl || args.tilesetDataUrl, args);
+    },
     importFrameDataUrl: function (args) {
       return importFrameDataUrl(args.dataUrl, args);
     },
@@ -604,6 +918,9 @@
     ns.importFrameDataUrl = importFrameDataUrl;
     ns.importSpritesheetDataUrl = importSpritesheetDataUrl;
     ns.cutSpritesheet = cutSpritesheet;
+    ns.cutTileset = cutTileset;
+    ns.composeRoom = composeRoom;
+    ns.composeRoomFromTileset = composeRoom;
     ns.exportFrameDataUrl = exportFrameDataUrl;
     ns.exportFramesheetDataUrl = exportFramesheetDataUrl;
 
